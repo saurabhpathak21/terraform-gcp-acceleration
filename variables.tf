@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2019 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,90 +14,72 @@
  * limitations under the License.
  */
 
-variable "network" {
-  description = "Network to deploy to. Only one of network or subnetwork should be specified."
-  default     = ""
-}
-
-variable "subnetwork" {
-  description = "Subnet to deploy to. Only one of network or subnetwork should be specified."
-  default     = ""
-}
-
-variable "subnetwork_project" {
-  description = "The project that subnetwork belongs to"
-  default     = ""
-}
-
-variable "hostname" {
-  description = "Hostname of instances"
-  default     = ""
-}
-
-variable "add_hostname_suffix" {
-  description = "Adds a suffix to the hostname"
-  default     = true
-}
-
-variable "static_ips" {
-  type        = list(string)
-  description = "List of static IPs for VM instances"
-  default     = []
-}
-
-variable "access_config" {
-  description = "Access configurations, i.e. IPs via which the VM instance can be accessed via the Internet."
-  type = list(object({
-    nat_ip       = string
-    network_tier = string
-  }))
-  default = []
-}
-
-variable "num_instances" {
-  description = "Number of instances to create. This value is ignored if static_ips is provided."
-  default     = "1"
-}
-
-variable "instance_template" {
-  description = "Instance template self_link used to create compute instances"
-}
-
-variable "region" {
+variable "project_id" {
+  description = "The ID of the project where this VPC will be created"
   type        = string
-  description = "Region where the instances should be created."
-  default     = null
 }
 
-variable "zone" {
+variable "network_name" {
+  description = "The name of the network being created"
   type        = string
-  description = "Zone where the instances should be created. If not specified, instances will be spread across available zones in the region."
-  default     = null
 }
 
-variable "hostname_suffix_separator" {
+variable "routing_mode" {
   type        = string
-  description = "Separator character to compose hostname when add_hostname_suffix is set to true."
-  default     = "-"
+  default     = "GLOBAL"
+  description = "The network routing mode (default 'GLOBAL')"
 }
 
-variable "deletion_protection" {
+variable "shared_vpc_host" {
   type        = bool
-  description = "Enable deletion protection on this instance. Note: you must disable deletion protection before removing the resource, or the instance cannot be deleted and the Terraform run will not complete successfully."
+  description = "Makes this project a Shared VPC host if 'true' (default 'false')"
   default     = false
 }
 
-variable "alias_ip_ranges" {
-  description = "(Optional) An array of alias IP ranges for this network interface. Can only be specified for network interfaces on subnet-mode networks."
-  type = list(object({
-    ip_cidr_range         = string
-    subnetwork_range_name = string
-  }))
-  default = []
+variable "subnets" {
+  type        = list(map(string))
+  description = "The list of subnets being created"
 }
 
-variable "resource_policies" {
-  description = "(Optional) A list of short names or self_links of resource policies to attach to the instance. Modifying this list will cause the instance to recreate. Currently a max of 1 resource policy is supported."
-  type        = list(string)
+variable "secondary_ranges" {
+  type        = map(list(object({ range_name = string, ip_cidr_range = string })))
+  description = "Secondary ranges that will be used in some of the subnets"
+  default     = {}
+}
+
+variable "routes" {
+  type        = list(map(string))
+  description = "List of routes being created in this VPC"
   default     = []
+}
+
+variable "firewall_rules" {
+  type        = any
+  description = "List of firewall rules"
+  default     = []
+}
+
+variable "delete_default_internet_gateway_routes" {
+  type        = bool
+  description = "If set, ensure that all routes within the network specified whose names begin with 'default-route' and with a next hop of 'default-internet-gateway' are deleted"
+  default     = false
+}
+
+
+variable "description" {
+  type        = string
+  description = "An optional description of this resource. The resource must be recreated to modify this field."
+  default     = ""
+}
+
+variable "auto_create_subnetworks" {
+  type        = bool
+  description = "When set to true, the network is created in 'auto subnet mode' and it will create a subnet for each region automatically across the 10.128.0.0/9 address range. When set to false, the network is created in 'custom subnet mode' so the user can explicitly connect subnetwork resources."
+  default     = false
+}
+
+variable "mtu" {
+  type        = number
+  description = "The network MTU (If set to 0, meaning MTU is unset - defaults to '1460'). Recommended values: 1460 (default for historic reasons), 1500 (Internet default), or 8896 (for Jumbo packets). Allowed are all values in the range 1300 to 8896, inclusively."
+  default     = 0
 }
